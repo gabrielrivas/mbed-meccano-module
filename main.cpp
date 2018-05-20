@@ -9,30 +9,45 @@
 
 const uint8_t startByte = 0xFF;
 
+// ****************** IO
+DigitalInOut moduleDataOut(D0);
+InterruptIn moduleDataIn(D1);
+DigitalOut led1(LED1);
+Serial ser(SERIAL_TX, SERIAL_RX);
+
+// ****************** Sender FSM
 enum SENDER_STATES
 {
-  START_BIT = 0,
-  START_BYTE,
+  START_BYTE = 0,
   DATA_BYTES
 };
 
 SENDER_STATES sendState = START_BYTE;
 
-Serial ser(SERIAL_TX, SERIAL_RX);
-
-
 Thread dataSendThread;
-DigitalInOut moduleDataOut(D0);
-InterruptIn moduleDataIn(D1);
-DigitalOut led1(LED1);
-
-Ticker sender;
-
 int shiftCounter = 0;
 int moduleCounter = 0;
 uint16_t tmpData = 0;
 std::map<int, MeccanoSmartModule> m_smartModulesMap;
 uint8_t checkSum = 0;
+
+Ticker sender;
+
+// ****************** Receiver FSM
+
+enum RECEIVER_STATES
+{
+  START_BIT = 0,
+  DATA_BITS   
+};
+
+RECEIVER_STATES receiveState = START_BIT;
+
+Timer receiver;
+int lowTime = 0;
+int receiverShiftCounter = 0;
+uint8_t receiverData = 0;
+
 
 
 uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum){
@@ -51,6 +66,51 @@ uint16_t frameByte(uint8_t data)
    uint16_t tmp = data;
    
    return (tmp << 1) | START_STOP_BITS;  
+}
+
+void receiveDataFall()
+{
+  //t0 = 0
+  receiver.reset();
+}
+
+void receiveDataRise()
+{
+  uint8_t bitValue = 0;
+  //get t1
+  lowTime = receiver.read_us(); 
+
+  switch(receiveState)
+  {
+     case START_BIT:
+       if (lowTime > 1900)
+       {
+         receiverShiftCounter = 0;
+         receiverData = 0;
+         receiveState = DATA_BITS; 
+       }
+
+       break;
+     case DATA_BITS:
+       
+       if (lowTime < 700)
+       {
+         bitValue = 1; 
+       }     
+       receiverData |= ((bitValue & 0x01) << receiverShiftCounter);
+
+       if (receiverShiftCounter < 7)
+       {
+         ++receiverShiftCounter;
+       }
+       else 
+       {
+         receiveState = START_BIT;
+
+         moduleDataIn.disable_irq();        
+       }   
+       break;
+  }
 }
 
 void sendData()
@@ -99,6 +159,7 @@ void sendData()
         	  //dataSendThread.signal_set(0x01);
 
     //Detach sender interrupt while receiving data
+    moduleDataIn.enable_irq();
     sender.detach();
     moduleDataOut.input();
                    
@@ -142,7 +203,7 @@ void communicate()
     shiftCounter = 0;
     moduleCounter = 0;
     
-    moduleDataOut.output();  
+    moduleDataOut.output();      
     sender.attach_us(&sendData, BIT_TIME);
 }
 
@@ -150,9 +211,13 @@ int main() {
   ser.baud(115200);
   ser.printf("Hello World!\r\n");
 
- moduleDataOut.output();
- moduleDataOut.mode(PullNone); 
-
+  receiver.start(); 
+  moduleDataIn.fall(&receiveDataFall);
+  moduleDataIn.rise(&receiveDataRise);
+  
+  moduleDataOut.output();
+  moduleDataOut.mode(PullNone); 
+ 
   //moduleDataIn.rise(&dataRise);
   //moduleDataIn.fall(&dataFall);
 
@@ -182,14 +247,16 @@ int main() {
 int posCounter = 0x20;
   communicate();
   wait(0.5);
-
   setPosition(0, 0xFC);
   communicate();
   wait(0.5);
 
   while(1) 
   {   	
+    ser.printf("Data Received = %d\r\n", receiverData);
+
     setPosition(0, posCounter);
+    
     communicate();
 
     if (posCounter < 0xE0)
@@ -197,6 +264,6 @@ int posCounter = 0x20;
     else
       posCounter = 0x20;
 
-  	wait(0.5);
+  	wait(0.1);
   }
 }
