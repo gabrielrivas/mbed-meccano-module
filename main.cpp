@@ -25,8 +25,7 @@ enum SENDER_STATES
 
 SENDER_STATES sendState = START_BYTE;
 
-Thread dataSendThread;
-int shiftCounter = 0;
+int senderShiftCounter = 0;
 int moduleCounter = 0;
 uint16_t tmpData = 0;
 std::map<int, MeccanoSmartModule> m_smartModulesMap;
@@ -58,7 +57,6 @@ uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t D
 
   return (CS & 0xFF);
 }
-
 
 uint16_t frameByte(uint8_t data)
 {
@@ -117,26 +115,26 @@ void sendData()
     switch(sendState)
     {
     	case START_BYTE:    	  
-        moduleDataOut = ((tmpData >> shiftCounter) & 0x01);	
+        moduleDataOut = ((tmpData >> senderShiftCounter) & 0x01);	
     	  
-    	  if (shiftCounter < 10)
+    	  if (senderShiftCounter < 10)
     	  {
-            shiftCounter++; 
+            senderShiftCounter++; 
         }
         else
         {
           sendState = DATA_BYTES;
           moduleCounter = 0;
           tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_data); 
-          shiftCounter = 0;   
+          senderShiftCounter = 0;   
         }  
     	  break;  
     	case DATA_BYTES:    	
-        moduleDataOut = ((tmpData >> shiftCounter) & 0x01);
+        moduleDataOut = ((tmpData >> senderShiftCounter) & 0x01);
 
-  	    if (shiftCounter < 10)
+  	    if (senderShiftCounter < 10)
   	    {	
-          shiftCounter++; 
+          senderShiftCounter++; 
         }
         else
         {
@@ -161,20 +159,10 @@ void sendData()
             sender.detach();
             moduleDataOut.input();                   
         	}
-          shiftCounter = 0;    
+          senderShiftCounter = 0;    
         }   
     	  break;  
     }	
-}
-
-
-void data_send_process()
-{
-  while (true) { 
-    Thread::signal_wait(0x1);
-        
-    Thread::wait(10);
-  }    
 }
 
 void setPosition(int servoSlot, uint8_t position)
@@ -196,7 +184,7 @@ void communicate()
 
     sendState = START_BYTE;
        
-    shiftCounter = 0;
+    senderShiftCounter = 0;
     moduleCounter = 0;
     
     moduleDataOut.output();      
@@ -224,13 +212,6 @@ int main() {
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(1, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(2, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
-
-  ser.printf("Data initialized %d = \r\n", checkSum);
-
-  dataSendThread.start(&data_send_process); 
-
-  ser.printf("Started thread\r\n");
-  ser.printf("Started ticker\r\n");
 
   communicate();
   wait(0.5);
