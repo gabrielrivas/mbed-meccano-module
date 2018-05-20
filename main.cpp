@@ -3,7 +3,8 @@
 #include <map>
 #include "MeccanoSmartModule.h"
 
-//0b0000 0110 0000 0000
+//Mask that adds the start and stop bits 
+//For sending bytes
 #define START_STOP_BITS 0x0600
 #define BIT_TIME 420
 
@@ -11,7 +12,7 @@ const uint8_t startByte = 0xFF;
 
 // ****************** IO
 DigitalInOut moduleDataOut(D0);
-InterruptIn moduleDataIn(D1);
+InterruptIn moduleDataIn(D0);
 DigitalOut led1(LED1);
 Serial ser(SERIAL_TX, SERIAL_RX);
 
@@ -48,8 +49,6 @@ int lowTime = 0;
 int receiverShiftCounter = 0;
 uint8_t receiverData = 0;
 
-
-
 uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum){
   uint16_t CS = Data1 + Data2 + Data3 + Data4;  // ignore overflow
   CS = CS + (CS >> 8);                  // right shift 8 places
@@ -77,6 +76,7 @@ void receiveDataFall()
 void receiveDataRise()
 {
   uint8_t bitValue = 0;
+
   //get t1
   lowTime = receiver.read_us(); 
 
@@ -91,8 +91,7 @@ void receiveDataRise()
        }
 
        break;
-     case DATA_BITS:
-       
+     case DATA_BITS:       
        if (lowTime < 700)
        {
          bitValue = 1; 
@@ -156,13 +155,11 @@ void sendData()
             moduleDataOut = 1;
         	  moduleCounter = 0;
         	  sendState = START_BYTE;
-        	  //dataSendThread.signal_set(0x01);
-
-    //Detach sender interrupt while receiving data
-    moduleDataIn.enable_irq();
-    sender.detach();
-    moduleDataOut.input();
-                   
+        
+            //Detach sender interrupt while receiving data
+            moduleDataIn.enable_irq();
+            sender.detach();
+            moduleDataOut.input();                   
         	}
           shiftCounter = 0;    
         }   
@@ -176,7 +173,6 @@ void data_send_process()
   while (true) { 
     Thread::signal_wait(0x1);
         
-
     Thread::wait(10);
   }    
 }
@@ -208,6 +204,8 @@ void communicate()
 }
 
 int main() {
+  int posCounter = 0x18;
+
   ser.baud(115200);
   ser.printf("Hello World!\r\n");
 
@@ -218,9 +216,6 @@ int main() {
   moduleDataOut.output();
   moduleDataOut.mode(PullNone); 
  
-  //moduleDataIn.rise(&dataRise);
-  //moduleDataIn.fall(&dataFall);
-
   //Initialize channel output	
   moduleDataOut = 1;
   led1 = 0;
@@ -230,21 +225,13 @@ int main() {
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(2, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
 
-
-        checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_data,
-                          m_smartModulesMap.at(1).m_data,
-                          m_smartModulesMap.at(2).m_data,
-                          m_smartModulesMap.at(3).m_data,
-                          0);
-  
-
   ser.printf("Data initialized %d = \r\n", checkSum);
 
   dataSendThread.start(&data_send_process); 
 
   ser.printf("Started thread\r\n");
   ser.printf("Started ticker\r\n");
-int posCounter = 0x20;
+
   communicate();
   wait(0.5);
   setPosition(0, 0xFC);
@@ -259,10 +246,10 @@ int posCounter = 0x20;
     
     communicate();
 
-    if (posCounter < 0xE0)
+    if (posCounter < 0xE8)
       posCounter++;
     else
-      posCounter = 0x20;
+      posCounter = 0x18;
 
   	wait(0.1);
   }
