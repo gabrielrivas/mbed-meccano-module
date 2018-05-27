@@ -17,7 +17,9 @@ class MeccanoSmartModule
       ~MeccanoSmartModule(){}
 
       TYPE_t  m_type;
-      uint8_t m_data;
+      uint8_t m_outputData;
+      uint8_t m_inputData;
+      bool m_isPresent;
 };
 
 #endif

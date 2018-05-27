@@ -35,11 +35,17 @@ class MeccanoPortController
         void receiveDataRise();
         void sendData();
         void setPosition(int servoSlot, uint8_t position);
-        void communicate();
+        void enableSendData();
         
+        std::map<int, MeccanoSmartModule>& getModulesMap()
+        {
+          return m_smartModulesMap;
+        }
+
         uint8_t getReceivedData() {
             return receiverData;
         }
+
     private:
         DigitalInOut* moduleDataOut;
         InterruptIn* moduleDataIn;
@@ -59,6 +65,7 @@ class MeccanoPortController
         int receiverShiftCounter;
         uint8_t receiverData;
         static uint8_t startByte;
+        int currentModule;
 };
 
 #endif

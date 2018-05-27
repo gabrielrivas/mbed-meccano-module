@@ -26,6 +26,9 @@ MeccanoPortController::MeccanoPortController(DigitalInOut* a_moduleDataOut, Inte
 
     senderShiftCounter = 0;
     moduleCounter = 0;
+
+    moduleCounter = 0;
+
     tmpData = 0;
 
     checkSum = 0;
@@ -100,6 +103,10 @@ void MeccanoPortController::receiveDataRise()
        }
        else 
        {
+
+         std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(currentModule); 
+         (it->second).m_inputData = receiverData; 
+           
          receiveState = START_BIT;
 
          moduleDataIn->disable_irq();        
@@ -123,7 +130,7 @@ void MeccanoPortController::sendData()
         {
           sendState = DATA_BYTES;
           moduleCounter = 0;
-          tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_data); 
+          tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_outputData); 
           senderShiftCounter = 0;   
         }  
     	  break;  
@@ -144,7 +151,7 @@ void MeccanoPortController::sendData()
         	else if (moduleCounter < 3) 
         	{
             moduleCounter++;
-        	  tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_data);        	          	  	
+        	  tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_outputData);        	          	  	
         	}
         	else
         	{
@@ -166,18 +173,25 @@ void MeccanoPortController::sendData()
 void MeccanoPortController::setPosition(int servoSlot, uint8_t position)
 {
     std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
-    (it->second).m_data = position;  
+    (it->second).m_outputData = position; 
+
+    enableSendData(); 
 }
 
-void MeccanoPortController::communicate()
+void MeccanoPortController::enableSendData()
 {  
     tmpData = frameByte(startByte);
  
-     checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_data,
-                          m_smartModulesMap.at(1).m_data,
-                          m_smartModulesMap.at(2).m_data,
-                          m_smartModulesMap.at(3).m_data,
-                          0);
+    if (currentModule < 3)
+      currentModule++;
+    else
+      currentModule = 0;
+
+    checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
+                          m_smartModulesMap.at(1).m_outputData,
+                          m_smartModulesMap.at(2).m_outputData,
+                          m_smartModulesMap.at(3).m_outputData,
+                          currentModule);
   
 
     sendState = START_BYTE;
@@ -188,3 +202,4 @@ void MeccanoPortController::communicate()
     moduleDataOut->output();      
     sender.attach_us(callback(this, &MeccanoPortController::sendData), BIT_TIME);
 }
+
