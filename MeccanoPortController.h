@@ -7,7 +7,27 @@
 
 class MeccanoPortController 
 {
-    public:
+  public:
+    // ***************** Reserved commands
+    enum RESERVED_COMMANDS
+    {
+      HEADER_BYTE = 0xFF,     // header byte (never used for anything else)
+      ID_NOT_ASSIGNED = 0xFE, // ID not assigned (means no Smart Module is at this position)
+      ERASE_ID = 0xFD,        // Erase ID (resets the Smart Module)
+      REPORT_TYPE = 0xFC,      // Report Smart Module type
+      MODULE_PRESENT = 0xF9
+    };
+
+    // ***************** Port controller
+    enum PORT_CONTROLLER 
+    {
+      MODULE_DISCOVERY = 0,
+      GET_DISCOVERY_RESPONSE,
+      MODULE_TYPE_DISCOVERY,
+      GET_TYPE_RESPONSE,
+      MODULE_IDLE,
+      INVALID
+    };
 
     // ****************** Sender FSM
     enum SENDER_STATES
@@ -36,7 +56,8 @@ class MeccanoPortController
         void sendData();
         void setPosition(int servoSlot, uint8_t position);
         void enableSendData();
-        
+        static void threadStarter(const void* arg);   
+        void setCommand(int servoSlot, RESERVED_COMMANDS command);
         std::map<int, MeccanoSmartModule>& getModulesMap()
         {
           return m_smartModulesMap;
@@ -47,9 +68,15 @@ class MeccanoPortController
         }
 
     private:
+      void ioControllerEngine(); 
+      void setPresence(int servoSlot, bool presence);
+      void setInputData(int servoSlot, uint8_t data);
+      
+    private:
         DigitalInOut* moduleDataOut;
         InterruptIn* moduleDataIn;
 
+        PORT_CONTROLLER controllerState;
         RECEIVER_STATES receiveState;
         SENDER_STATES sendState;
 
@@ -58,7 +85,7 @@ class MeccanoPortController
         uint16_t tmpData;
         std::map<int, MeccanoSmartModule> m_smartModulesMap;
         uint8_t checkSum;
-
+       
         Ticker sender;
         Timer receiver;
         int lowTime;
@@ -66,6 +93,8 @@ class MeccanoPortController
         uint8_t receiverData;
         static uint8_t startByte;
         int currentModule;
+
+        Thread*  m_inputThread;
 };
 
 #endif

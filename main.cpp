@@ -15,7 +15,7 @@ void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
    
   for(it = modulesMap.begin(); it != modulesMap.end(); ++it)
   {
-    ser.printf("Module(k,v) = %d , %d \r\n", it->first, (it->second).m_inputData); 
+    ser.printf("Module(k,v) = %d , %d \r\n", it->first, (it->second).m_isPresent); 
   }
 }
 
@@ -32,11 +32,12 @@ int main() {
   port1.setPosition(0, 0xFE);
   wait(0.5);
   port1.setPosition(0, 0xFC);
-  wait(0.5);
+  
+//  wait(5);
 
   while(1) 
   {   	
-    printAllModulesData(port1.getModulesMap());
+    //printAllModulesData(port1.getModulesMap());
     
     port1.setPosition(0, posCounter);
     
