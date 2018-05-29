@@ -43,10 +43,19 @@ MeccanoPortController::MeccanoPortController(DigitalInOut* a_moduleDataOut, Inte
     moduleDataIn->rise(callback(this, &MeccanoPortController::receiveDataRise));
     
 
-    m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(0, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
-    m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(1, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
-    m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(2, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
-    m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
+  m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(0, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
+  m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(1, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
+  m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(2, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
+  m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
+
+  m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
+  m_inputThread->set_priority(osPriorityRealtime);    
+}
+
+void MeccanoPortController::threadStarter(const void* arg)
+{
+	MeccanoPortController* instancePtr = static_cast<MeccanoPortController*>(const_cast<void*>(arg));
+  instancePtr->ioControllerEngine();
 }
 
 uint8_t MeccanoPortController::calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum){
@@ -203,3 +212,24 @@ void MeccanoPortController::enableSendData()
     sender.attach_us(callback(this, &MeccanoPortController::sendData), BIT_TIME);
 }
 
+void MeccanoPortController::ioControllerEngine()
+{
+int posCounter = 0x18;
+
+  setPosition(0, 0xFE);
+  Thread::wait(500);
+  setPosition(0, 0xFC);
+  Thread::wait(500);
+
+  while(true)
+  {
+    setPosition(0, posCounter);
+    
+    if (posCounter < 0xE8)
+      posCounter++;
+    else
+      posCounter = 0x18;
+
+    Thread::wait(100);    
+  }
+}  

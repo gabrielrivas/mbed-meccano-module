@@ -36,7 +36,9 @@ class MeccanoPortController
         void sendData();
         void setPosition(int servoSlot, uint8_t position);
         void enableSendData();
-        
+        static void threadStarter(const void* arg);
+        void ioControllerEngine();
+
         std::map<int, MeccanoSmartModule>& getModulesMap()
         {
           return m_smartModulesMap;
@@ -66,6 +68,8 @@ class MeccanoPortController
         uint8_t receiverData;
         static uint8_t startByte;
         int currentModule;
+
+         Thread*  m_inputThread;
 };
 
 #endif

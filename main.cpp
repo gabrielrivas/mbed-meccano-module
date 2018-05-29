@@ -28,15 +28,15 @@ int main() {
   led1 = 0;
 
   MeccanoPortController port1(&moduleDataOut,&moduleDataIn);
-
+/*
   port1.setPosition(0, 0xFE);
   wait(0.5);
   port1.setPosition(0, 0xFC);
   wait(0.5);
-
+*/
   while(1) 
   {   	
-    printAllModulesData(port1.getModulesMap());
+/*    printAllModulesData(port1.getModulesMap());
     
     port1.setPosition(0, posCounter);
     
@@ -44,7 +44,8 @@ int main() {
       posCounter++;
     else
       posCounter = 0x18;
-
-  	wait(0.1);
+*/
+  	wait(1);
+    
   }
 }
