@@ -67,7 +67,7 @@ class MeccanoPortController
             return receiverData;
         }
 
-    private:
+    
       void ioControllerEngine(); 
       void setPresence(int servoSlot, bool presence);
       void setInputData(int servoSlot, uint8_t data);

@@ -50,8 +50,10 @@ MeccanoPortController::MeccanoPortController(DigitalInOut* a_moduleDataOut, Inte
     m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
 
     //Start RTOS Thread with provided method and argument
-	  //m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
-    //m_inputThread->set_priority(osPriorityRealtime);
+	  m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
+    m_inputThread->set_priority(osPriorityRealtime);
+
+//m_inputThread->signal_set(0x01);
 }
 
 void MeccanoPortController::threadStarter(const void* arg)
@@ -121,7 +123,7 @@ void MeccanoPortController::receiveDataRise()
 
          moduleDataIn->disable_irq(); 
          
-         m_inputThread->signal_set(0x01);       
+         //m_inputThread->signal_set(0x01);       
        }   
        break;
   }
@@ -240,70 +242,5 @@ void MeccanoPortController::ioControllerEngine()
   {
     Thread::signal_wait(0x1);
 
-    switch(controllerState)
-    {
-     // case MODULE_DISCOVERY:
-     //   setCommand(currentModule, MeccanoPortController::ID_NOT_ASSIGNED);
-     //   controllerState = MeccanoPortController::GET_DISCOVERY_RESPONSE;
-
-     //   break;
-      case GET_DISCOVERY_RESPONSE:
-//setInputData(currentModule, receiverData);
-        if (m_smartModulesMap.at(currentModule).m_outputData == MeccanoPortController::MODULE_PRESENT)
-        {
-            setPresence(currentModule, true); 
-        }     
-        else{
-          setPresence(currentModule, false);
-        }     
-
-        if (currentModule < 3)
-        {
-          currentModule++;
-          controllerState = MeccanoPortController::MODULE_DISCOVERY;
-        }
-        else
-        {
-          currentModule = 0;
-          controllerState = MeccanoPortController::MODULE_TYPE_DISCOVERY;
-          //controllerState = MeccanoPortController::MODULE_IDLE;
-        }        
-        break;        
-      case MODULE_TYPE_DISCOVERY:
-        setCommand(currentModule, MeccanoPortController::REPORT_TYPE);
-        controllerState = GET_TYPE_RESPONSE;
-
-        break;
-       case GET_TYPE_RESPONSE: 
-       
-       //if (m_smartModulesMap.at(currentModule).m_isPresent)   
-       //  setInputData(currentModule, receiverData);
-
-        if (currentModule < 3)
-        {
-          currentModule++;
-          controllerState = MeccanoPortController::MODULE_TYPE_DISCOVERY;
-        }
-        else
-        {
-          currentModule = 0;
-          controllerState = MeccanoPortController::MODULE_IDLE;
-        }
-               
-        break;       
-      case MODULE_IDLE:
-       
-      
-       //if (m_smartModulesMap.at(currentModule).m_isPresent)   
-       //  setInputData(currentModule, receiverData);
-
-        if (currentModule < 3)
-          currentModule++;
-        else
-          currentModule = 0;      
-        break;
-      default:
-        break;  
-    }
   }  
 }
