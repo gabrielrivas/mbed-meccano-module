@@ -4,8 +4,8 @@
 #include "MeccanoPortController.h"
 
 // ****************** IO
-DigitalInOut moduleDataOut(D0);
-InterruptIn moduleDataIn(D0);
+Serial moduleDataOut(D1, D0);
+InterruptIn moduleDataIn(D4);
 DigitalOut led1(LED1);
 Serial ser(SERIAL_TX, SERIAL_RX);
 
@@ -21,22 +21,24 @@ void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
 
 int main() {
   int posCounter = 0x18;
-  
+
+  moduleDataOut.baud(2398);
+  moduleDataOut.format(8, SerialBase::None, 2); 
   ser.baud(115200);
   ser.printf("Hello World!\r\n");
  
   led1 = 0;
 
   MeccanoPortController port1(&moduleDataOut,&moduleDataIn);
-/*
+
   port1.setPosition(0, 0xFE);
   wait(0.5);
   port1.setPosition(0, 0xFC);
   wait(0.5);
-*/
+
   while(1) 
   {   	
-/*    printAllModulesData(port1.getModulesMap());
+    printAllModulesData(port1.getModulesMap());
     
     port1.setPosition(0, posCounter);
     
@@ -44,8 +46,7 @@ int main() {
       posCounter++;
     else
       posCounter = 0x18;
-*/
-  	wait(1);
-    
+
+  	wait(1);    
   }
 }

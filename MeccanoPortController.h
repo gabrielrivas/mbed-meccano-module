@@ -25,7 +25,7 @@ class MeccanoPortController
     };
 
     public:
-      MeccanoPortController(DigitalInOut* a_moduleDataOut, InterruptIn* a_moduleDataIn);
+      MeccanoPortController(Serial* a_moduleDataOut, InterruptIn* a_moduleDataIn);
       ~MeccanoPortController(){}
 
     public:
@@ -49,7 +49,7 @@ class MeccanoPortController
         }
 
     private:
-        DigitalInOut* moduleDataOut;
+        Serial* moduleDataOut;
         InterruptIn* moduleDataIn;
 
         RECEIVER_STATES receiveState;
