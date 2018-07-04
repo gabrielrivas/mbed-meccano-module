@@ -50,8 +50,8 @@ MeccanoPortController::MeccanoPortController(DigitalInOut* a_moduleDataOut, Inte
     m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
 
     //Start RTOS Thread with provided method and argument
-	  m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
-    m_inputThread->set_priority(osPriorityRealtime);
+//	  m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
+//    m_inputThread->set_priority(osPriorityRealtime);
 
 //m_inputThread->signal_set(0x01);
 }
@@ -240,7 +240,7 @@ void MeccanoPortController::ioControllerEngine()
 
   while(true)
   {
-    Thread::signal_wait(0x1);
+  //  Thread::signal_wait(0x1);
 
   }  
 }

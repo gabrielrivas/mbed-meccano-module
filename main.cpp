@@ -15,7 +15,7 @@ void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
    
   for(it = modulesMap.begin(); it != modulesMap.end(); ++it)
   {
-    ser.printf("Module(k,v) = %d , %d \r\n", it->first, (it->second).m_inputData); 
+    ser.printf("Module(k,v) = %d , %d \r\n", it->first, (it->second).m_outputData); 
   }
 }
 
@@ -33,7 +33,7 @@ int main() {
   MeccanoPortController port1(&moduleDataOut,&moduleDataIn);
   controllerState = MeccanoPortController::MODULE_DISCOVERY;
 
-  while(1) 
+  while(true) 
   {   	
     printAllModulesData(port1.getModulesMap());
     
@@ -90,11 +90,11 @@ int main() {
         break;       
       case MeccanoPortController::MODULE_IDLE:
         
-        port1.setPosition(currentModule, posCounter);
+        port1.setPosition(0, posCounter);
         if (posCounter < 0xE8)
           posCounter++;
         else
-          posCounter = 0x0;
+          posCounter = 0x18;
         
         if (currentModule < 3)
           currentModule++;
@@ -107,6 +107,6 @@ int main() {
     }
 
 
-  	Thread::wait(100);
+  	wait(0.1);
   }
 }
