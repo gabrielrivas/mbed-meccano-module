@@ -10,16 +10,20 @@
 
 uint8_t MeccanoPortController::startByte = 0xFF;
 
-MeccanoPortController::MeccanoPortController(Serial* a_moduleDataOut, InterruptIn* a_moduleDataIn)
+MeccanoPortController::MeccanoPortController(Serial* a_moduleDataOut, InterruptIn* a_moduleDataIn, DigitalOut* a_portEnable)
 {
     moduleDataOut = a_moduleDataOut;
     moduleDataIn = a_moduleDataIn;    
+    portEnable = a_portEnable;
+
+    *portEnable = 1;
 
     receiveState = START_BIT;
     sendState = START_BYTE;
 
+    currentModule = 0;
+
     senderShiftCounter = 0;
-    moduleCounter = 0;
 
     moduleCounter = 0;
 
@@ -99,13 +103,14 @@ void MeccanoPortController::receiveDataRise()
        }
        else 
        {
-        std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(currentModule); 
-        (it->second).m_inputData = receiverData; 
+
+         std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(currentModule); 
+         (it->second).m_inputData = receiverData; 
            
          receiveState = START_BIT;
 
          moduleDataIn->disable_irq(); 
-         
+         *portEnable = 1;
          //m_inputThread->signal_set(0x01);       
        }   
        break;
@@ -114,9 +119,9 @@ void MeccanoPortController::receiveDataRise()
 
 void MeccanoPortController::sendData()
 {
-//  moduleDataOut->set_flow_control(SerialBase::Disabled,NC,NC);
+  *portEnable = 1;
 
-    checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
+  checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
                           m_smartModulesMap.at(1).m_outputData,
                           m_smartModulesMap.at(2).m_outputData,
                           m_smartModulesMap.at(3).m_outputData,
@@ -135,7 +140,9 @@ void MeccanoPortController::sendData()
   //Enable receiver
   moduleDataIn->enable_irq();  	
 
-//  moduleDataOut->set_flow_control(SerialBase::RTSCTS,NC,NC);
+  wait(0.015);
+
+  *portEnable = 0;
 }
 
 void MeccanoPortController::setPosition(int servoSlot, uint8_t position)

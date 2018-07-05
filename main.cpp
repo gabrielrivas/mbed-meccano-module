@@ -7,6 +7,7 @@
 Serial moduleDataOut(D1, D0);
 InterruptIn moduleDataIn(D4);
 DigitalOut led1(LED1);
+DigitalOut portEnable(D3);
 Serial ser(SERIAL_TX, SERIAL_RX);
 
 void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
@@ -29,7 +30,7 @@ int main() {
  
   led1 = 0;
 
-  MeccanoPortController port1(&moduleDataOut,&moduleDataIn);
+  MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
 
   port1.setPosition(0, 0xFE);
   wait(0.5);
@@ -39,7 +40,7 @@ int main() {
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
-    
+    //ser.printf("Input data = %d \r\n", port1.getReceivedData());
     port1.setPosition(0, posCounter);
     
     if (posCounter < 0xE8)
@@ -47,6 +48,6 @@ int main() {
     else
       posCounter = 0x18;
 
-  	wait(1);    
+  	wait(0.1);    
   }
 }
