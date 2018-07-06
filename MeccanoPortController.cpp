@@ -31,7 +31,6 @@ MeccanoPortController::MeccanoPortController(Serial* a_moduleDataOut, InterruptI
 
     checkSum = 0;
 
-    receiver;
     lowTime = 0;
     receiverShiftCounter = 0;
     receiverData = 0;
@@ -137,12 +136,13 @@ void MeccanoPortController::sendData()
   //Send checksum
   moduleDataOut->putc(checkSum);
 
-  //Enable receiver
-  moduleDataIn->enable_irq();  	
-
-  wait(0.015);
-
+  //Thread::wait(8);
+  
+  //Enable receiver  
+  //while(moduleDataOut->writable() == 0);
+  wait(0.010);
   *portEnable = 0;
+  moduleDataIn->enable_irq();
 }
 
 void MeccanoPortController::setPosition(int servoSlot, uint8_t position)
