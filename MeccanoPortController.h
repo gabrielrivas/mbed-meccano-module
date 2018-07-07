@@ -7,21 +7,32 @@
 
 class MeccanoPortController 
 {
-    public:
-
-    // ****************** Sender FSM
-    enum SENDER_STATES
+  public:  
+    // ***************** Reserved commands
+    enum RESERVED_COMMANDS
     {
-      START_BYTE = 0,
-      DATA_BYTES
+      HEADER_BYTE = 0xFF,     // header byte (never used for anything else)
+      ID_NOT_ASSIGNED = 0xFE, // ID not assigned (means no Smart Module is at this position)
+      ERASE_ID = 0xFD,        // Erase ID (resets the Smart Module)
+      REPORT_TYPE = 0xFC,      // Report Smart Module type
+      MODULE_PRESENT = 0xF9
     };
-
+      
     // ****************** Receiver FSM
-
     enum RECEIVER_STATES
     {
       START_BIT = 0,
       DATA_BITS   
+    };
+
+    enum PORT_CONTROLLER 
+    {
+      MODULE_DISCOVERY = 0,
+      GET_DISCOVERY_RESPONSE,
+      MODULE_TYPE_DISCOVERY,
+      GET_TYPE_RESPONSE,
+      MODULE_IDLE,
+      INVALID
     };
 
     public:
@@ -33,11 +44,9 @@ class MeccanoPortController
         uint16_t frameByte(uint8_t data);
         void receiveDataFall();
         void receiveDataRise();
-        void sendData();
-        void setPosition(int servoSlot, uint8_t position);
-        void enableSendData();
-        static void threadStarter(const void* arg);
-        void ioControllerEngine();
+        void setCommand(int servoSlot, uint8_t command);
+        void ioEngine();
+        void setPresence(int servoSlot, bool presence);
 
         std::map<int, MeccanoSmartModule>& getModulesMap()
         {
@@ -48,29 +57,27 @@ class MeccanoPortController
             return receiverData;
         }
 
+        PORT_CONTROLLER getState() {
+            return controllerState;
+        }
     private:
         Serial* moduleDataOut;
         InterruptIn* moduleDataIn;
         DigitalOut* portEnable;
 
+        PORT_CONTROLLER controllerState;
         RECEIVER_STATES receiveState;
-        SENDER_STATES sendState;
 
-        int senderShiftCounter;
-        int moduleCounter;
-        uint16_t tmpData;
         std::map<int, MeccanoSmartModule> m_smartModulesMap;
         uint8_t checkSum;
 
-        Ticker sender;
+        Ticker engineTicker;
         Timer receiver;
         int lowTime;
         int receiverShiftCounter;
         uint8_t receiverData;
         static uint8_t startByte;
         int currentModule;
-
-         Thread*  m_inputThread;
 };
 
 #endif

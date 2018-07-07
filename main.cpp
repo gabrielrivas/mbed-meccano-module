@@ -32,22 +32,30 @@ int main() {
 
   MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
 
-  port1.setPosition(0, 0xFE);
+/*
+  port1.setCommand(0, MeccanoPortController::ID_NOT_ASSIGNED);
   wait(0.5);
-  port1.setPosition(0, 0xFC);
+  printAllModulesData(port1.getModulesMap());
+  port1.setCommand(0, 0xFC);
   wait(0.5);
-
+  printAllModulesData(port1.getModulesMap());
+*/
+  while(port1.getState() != MeccanoPortController::MODULE_IDLE)
+  {
+    ser.printf("Input data = %d \r\n", port1.getReceivedData());
+    wait(0.1);    
+  }
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
     //ser.printf("Input data = %d \r\n", port1.getReceivedData());
-    port1.setPosition(0, posCounter);
+    port1.setCommand(0, posCounter);
     
     if (posCounter < 0xE8)
       posCounter++;
     else
       posCounter = 0x18;
 
-  	wait(0.1);    
+  	wait(1);    
   }
 }
