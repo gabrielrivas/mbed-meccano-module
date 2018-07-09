@@ -2,6 +2,7 @@
 #define _MECCANO_PORT_CONTROLLER_H_
 
 #include "MeccanoSmartModule.h"
+#include "MeccanoPortReceiver.h"
 #include <map>
 #include "mbed.h"
 
@@ -18,13 +19,6 @@ class MeccanoPortController
       MODULE_PRESENT = 0xF9
     };
       
-    // ****************** Receiver FSM
-    enum RECEIVER_STATES
-    {
-      START_BIT = 0,
-      DATA_BITS   
-    };
-
     enum PORT_CONTROLLER 
     {
       MODULE_DISCOVERY = 0,
@@ -41,42 +35,39 @@ class MeccanoPortController
 
     public:
         uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum);
-        uint16_t frameByte(uint8_t data);
-        void receiveDataFall();
-        void receiveDataRise();
+        
         void setCommand(int servoSlot, uint8_t command);
         void ioEngine();
         void setPresence(int servoSlot, bool presence);
+        void setType(int servoSlot, MeccanoSmartModule::TYPE_t type);
+        void setInputData(int servoSlot, uint8_t data);
 
         std::map<int, MeccanoSmartModule>& getModulesMap()
         {
           return m_smartModulesMap;
         }
 
-        uint8_t getReceivedData() {
-            return receiverData;
-        }
-
         PORT_CONTROLLER getState() {
             return controllerState;
         }
+
+        int getCurrentModule()
+        {
+          return currentModule;
+        }
     private:
         Serial* moduleDataOut;
-        InterruptIn* moduleDataIn;
+        MeccanoPortReceiver* portReceiver; 
         DigitalOut* portEnable;
 
+
         PORT_CONTROLLER controllerState;
-        RECEIVER_STATES receiveState;
 
         std::map<int, MeccanoSmartModule> m_smartModulesMap;
         uint8_t checkSum;
 
-        Ticker engineTicker;
-        Timer receiver;
-        int lowTime;
-        int receiverShiftCounter;
-        uint8_t receiverData;
-        static uint8_t startByte;
+        RtosTimer* engineTicker;        
+
         int currentModule;
 };
 

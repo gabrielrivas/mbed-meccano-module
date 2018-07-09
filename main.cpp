@@ -38,13 +38,16 @@ int main() {
   printAllModulesData(port1.getModulesMap());
   port1.setCommand(0, 0xFC);
   wait(0.5);
-  printAllModulesData(port1.getModulesMap());
-*/
+  */
   while(port1.getState() != MeccanoPortController::MODULE_IDLE)
   {
-    ser.printf("Input data = %d \r\n", port1.getReceivedData());
+    //port1.setCommand(0, MeccanoPortController::ID_NOT_ASSIGNED);
+    ser.printf("State = %d\r\n", port1.getState());
+    ser.printf("module = %d\r\n", port1.getCurrentModule()); 
+    printAllModulesData(port1.getModulesMap());
     wait(0.1);    
   }
+  
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
@@ -56,6 +59,6 @@ int main() {
     else
       posCounter = 0x18;
 
-  	wait(1);    
+  	wait(0.1);    
   }
 }
