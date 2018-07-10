@@ -62,10 +62,10 @@ int main() {
     }
 
     if (posCounter < 0xE8)
-      posCounter++;
+      posCounter+=10;
     else
       posCounter = 0x18;
 
-  	wait(0.05);    
+  	//wait(0.05);    
   }
 }
