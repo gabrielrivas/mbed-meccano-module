@@ -1,6 +1,6 @@
 #include "mbed.h"
 #include "rtos.h"
-
+#include <vector>
 #include "MeccanoPortController.h"
 
 // ****************** IO
@@ -22,6 +22,7 @@ void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
 
 int main() {
   int posCounter = 0x18;
+  std::vector<int> modulesPresent;
 
   moduleDataOut.baud(2398);
   moduleDataOut.format(8, SerialBase::None, 2); 
@@ -32,33 +33,39 @@ int main() {
 
   MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
 
-/*
-  port1.setCommand(0, MeccanoPortController::ID_NOT_ASSIGNED);
-  wait(0.5);
-  printAllModulesData(port1.getModulesMap());
-  port1.setCommand(0, 0xFC);
-  wait(0.5);
-  */
-  while(port1.getState() != MeccanoPortController::MODULE_IDLE)
+  for (int i = 0; i < 4; ++i)
   {
-    //port1.setCommand(0, MeccanoPortController::ID_NOT_ASSIGNED);
-    ser.printf("State = %d\r\n", port1.getState());
-    ser.printf("module = %d\r\n", port1.getCurrentModule()); 
-    printAllModulesData(port1.getModulesMap());
-    wait(0.1);    
+    uint8_t comres = port1.setCommand(i, MeccanoPortController::ID_NOT_ASSIGNED);
+
+    ser.printf("Comres = %d \r\n", comres);
+
+    if (comres == 249)
+    {
+      ser.printf("Module %d is present !!\r\n", i);
+      port1.setPresence(i, true);
+      modulesPresent.push_back(i);
+      wait(0.5); 
+      port1.setCommand(i, 0xFC);
+      wait(0.5);
+    }  
   }
-  
+
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
     //ser.printf("Input data = %d \r\n", port1.getReceivedData());
-    port1.setCommand(0, posCounter);
     
+    for (std::vector<int>::iterator it = modulesPresent.begin(); it != modulesPresent.end(); ++it)
+    {
+      port1.setCurrentModule(*it);
+      port1.setCommand(0, posCounter);
+    }
+
     if (posCounter < 0xE8)
       posCounter++;
     else
       posCounter = 0x18;
 
-  	wait(0.1);    
+  	wait(0.05);    
   }
 }

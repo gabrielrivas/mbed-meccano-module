@@ -33,20 +33,24 @@ void MeccanoPortReceiver::disableReceiver()
 
 void MeccanoPortReceiver::resetFSM()
 {  
+  receiverShiftCounter = 0;
+  receiverData = 0;  
   receiveState = START_BIT;    
 }
 
 void MeccanoPortReceiver::receiveDataFall()
 {
   //t0 = 0
-  receiver.reset();
+receiver.reset();
 }
 
 void MeccanoPortReceiver::receiveDataRise()
 {
+    
   //uint8_t bitValue = 0;
 
   //get t1
+ 
   int lowTime = receiver.read_high_resolution_us();
 
   switch(receiveState)
@@ -55,7 +59,6 @@ void MeccanoPortReceiver::receiveDataRise()
        if (lowTime > START_BIT_LOW_US)
        {
          receiverShiftCounter = 0;
-         receiverData = 0;
          receiveState = DATA_BITS; 
        }
 
@@ -77,7 +80,8 @@ void MeccanoPortReceiver::receiveDataRise()
          disableReceiver();    
        }   
        break;
-  } 
+  }
+ 
 }
 
         uint8_t MeccanoPortReceiver::getReceivedData() {
