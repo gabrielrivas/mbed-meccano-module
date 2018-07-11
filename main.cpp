@@ -35,7 +35,8 @@ int main() {
 
   for (int i = 0; i < 4; ++i)
   {
-    uint8_t comres = port1.setCommand(i, MeccanoPortController::ID_NOT_ASSIGNED);
+    port1.setCommand(i, MeccanoPortController::ID_NOT_ASSIGNED);
+    uint8_t comres = port1.sendData();
 
     ser.printf("Comres = %d \r\n", comres);
 
@@ -46,6 +47,7 @@ int main() {
       modulesPresent.push_back(i);
       wait(0.5); 
       port1.setCommand(i, 0xFC);
+      port1.sendData();
       wait(0.5);
     }  
   }
@@ -58,14 +60,15 @@ int main() {
     for (std::vector<int>::iterator it = modulesPresent.begin(); it != modulesPresent.end(); ++it)
     {
       port1.setCurrentModule(*it);
-      port1.setCommand(0, posCounter);
+      port1.setCommand(*it, posCounter);
+      port1.sendData();
     }
 
     if (posCounter < 0xE8)
-      posCounter+=10;
+      posCounter+=2;
     else
       posCounter = 0x18;
 
-  	//wait(0.05);    
+  	wait(0.1);    
   }
 }

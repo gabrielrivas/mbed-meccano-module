@@ -52,14 +52,17 @@ void MeccanoPortController::setType(int servoSlot, MeccanoSmartModule::TYPE_t ty
     (it->second).m_type = type; 
 }
 
-uint8_t MeccanoPortController::setCommand(int servoSlot, uint8_t command)
+void MeccanoPortController::setCommand(int servoSlot, uint8_t command)
 {
   std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
   (it->second).m_outputData = command; 
+}
+
+uint8_t MeccanoPortController::sendData()
+{
 
   *portEnable = 1;
   portReceiver->resetFSM();
-  //currentModule = servoSlot;
 
   checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
                           m_smartModulesMap.at(1).m_outputData,

@@ -36,7 +36,8 @@ class MeccanoPortController
     public:
         uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum);
         
-        uint8_t setCommand(int servoSlot, uint8_t command);
+        void setCommand(int servoSlot, uint8_t command);
+        uint8_t sendData();
         void ioEngine();
         void setPresence(int servoSlot, bool presence);
         void setType(int servoSlot, MeccanoSmartModule::TYPE_t type);
