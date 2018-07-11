@@ -33,35 +33,37 @@ int main() {
 
   MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
 
-  for (int i = 0; i < 4; ++i)
-  {
-    port1.setCommand(i, MeccanoPortController::ID_NOT_ASSIGNED);
-    uint8_t comres = port1.sendData();
-
-    ser.printf("Comres = %d \r\n", comres);
-
-    if (comres == 249)
+    port1.setCurrentModule(0);
+    for (int i = 0; i < 4; i++)
     {
-      ser.printf("Module %d is present !!\r\n", i);
-      port1.setPresence(i, true);
-      modulesPresent.push_back(i);
-      wait(0.5); 
-      port1.setCommand(i, 0xFC);
-      port1.sendData();
-      wait(0.5);
-    }  
-  }
+      port1.sendData();     
+      printAllModulesData(port1.getModulesMap());
+    }
 
+
+ 
+    port1.setCurrentModule(1);
+    for (int i = 0; i < 4; i++)
+    {
+      port1.sendData();     
+      printAllModulesData(port1.getModulesMap());
+    }   
+    wait(5);
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
     //ser.printf("Input data = %d \r\n", port1.getReceivedData());
     
-    for (std::vector<int>::iterator it = modulesPresent.begin(); it != modulesPresent.end(); ++it)
+ 
+    for (int j = 0; j < 4; j++)
     {
-      port1.setCurrentModule(*it);
-      port1.setCommand(*it, posCounter);
-      port1.sendData();
+    port1.setCurrentModule(j);     
+    for (int i = 0; i < 4; i++)
+    {
+      
+      port1.setCommand(i, 0x80);     
+    }
+    port1.sendData();
     }
 
     if (posCounter < 0xE8)

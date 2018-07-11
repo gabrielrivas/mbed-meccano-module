@@ -23,25 +23,46 @@ MeccanoPortReceiver::MeccanoPortReceiver(InterruptIn* a_moduleDataIn)
 
 void MeccanoPortReceiver::enableReceiver()
 {
+  //receiver.start();
   moduleDataIn->enable_irq();
 }
 
 void MeccanoPortReceiver::disableReceiver()
 {
   moduleDataIn->disable_irq();
+  //receiver.stop();
 }
 
 void MeccanoPortReceiver::resetFSM()
 {  
   receiverShiftCounter = 0;
-  receiverData = 0;  
+  receiverData = 0;
+  dataReady = false;    
   receiveState = START_BIT;    
 }
 
 void MeccanoPortReceiver::receiveDataFall()
 {
   //t0 = 0
-receiver.reset();
+ 
+  int lowTime = receiver.read_high_resolution_us();
+       
+       if (lowTime > 700)
+       {
+         receiverData |= (1 << receiverShiftCounter); 
+       }     
+       
+       if (receiverShiftCounter < 7)
+       {
+         ++receiverShiftCounter;
+       }
+       else 
+       {
+         dataReady = true;
+         receiveState = START_BIT;
+         disableReceiver();    
+       }   
+
 }
 
 void MeccanoPortReceiver::receiveDataRise()
@@ -50,6 +71,8 @@ void MeccanoPortReceiver::receiveDataRise()
   //uint8_t bitValue = 0;
 
   //get t1
+receiver.reset();
+/*
  
   int lowTime = receiver.read_high_resolution_us();
 
@@ -81,7 +104,11 @@ void MeccanoPortReceiver::receiveDataRise()
        }   
        break;
   }
- 
+
+
+*/ 
+
+
 }
 
         uint8_t MeccanoPortReceiver::getReceivedData() {
@@ -93,7 +120,5 @@ void MeccanoPortReceiver::receiveDataRise()
 
         bool MeccanoPortReceiver::isDataReady()
         {
-          bool dReady = dataReady;
-          dataReady = false;  
-          return dReady;
+          return dataReady;
         }
