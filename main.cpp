@@ -33,22 +33,29 @@ int main() {
 
   MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
 
-    port1.setCurrentModule(0);
+  for (int j = 0; j < 4; j++)
+  {
+    port1.setCurrentModule(j);
     for (int i = 0; i < 4; i++)
     {
       port1.sendData();     
-      printAllModulesData(port1.getModulesMap());
+      
     }
+  }
+  printAllModulesData(port1.getModulesMap());
 
-
- 
-    port1.setCurrentModule(1);
+  for (int j = 0; j < 4; j++)
+  {
+    port1.setCurrentModule(j);
     for (int i = 0; i < 4; i++)
     {
       port1.sendData();     
-      printAllModulesData(port1.getModulesMap());
-    }   
-    wait(5);
+      
+    }
+  }
+  printAllModulesData(port1.getModulesMap());
+
+  wait(5);
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
@@ -61,7 +68,7 @@ int main() {
     for (int i = 0; i < 4; i++)
     {
       
-      port1.setCommand(i, 0x80);     
+      port1.setCommand(i, posCounter);     
     }
     port1.sendData();
     }

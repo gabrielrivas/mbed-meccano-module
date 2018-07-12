@@ -83,19 +83,27 @@ uint8_t MeccanoPortController::sendData()
   //Thread::wait(8);
   
   //Enable receiver  
-  wait(0.01);
+  wait(0.010);
   *portEnable = 0;
   portReceiver->enableReceiver();
 
-  wait(0.020);
+  wait(0.014);
+  portReceiver->disableReceiver();
+  *portEnable = 1;
 
   uint8_t receivedData = portReceiver->getReceivedData();
 
   if (portReceiver->isDataReady())
   {
-    setInputData(currentModule, receivedData);
+    
     if (receivedData == 0xFE)
       setCommand(currentModule, 0xFC);
+
+    //if (m_smartModulesMap.at(currentModule).m_outputData <= 0xE8)
+    //  setInputData(currentModule, receivedData & 0x7F);
+    //else
+      setInputData(currentModule, receivedData);
+
   }
   else
     setInputData(currentModule, 0);  

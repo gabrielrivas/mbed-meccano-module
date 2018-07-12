@@ -45,70 +45,25 @@ void MeccanoPortReceiver::receiveDataFall()
 {
   //t0 = 0
  
-  int lowTime = receiver.read_high_resolution_us();
+  int lowTime = receiver.read_us();
        
-       if (lowTime > 700)
-       {
-         receiverData |= (1 << receiverShiftCounter); 
-       }     
+  if ((lowTime > 700) &&  (lowTime < 1000))
+  {
+    receiverData |= (1 << receiverShiftCounter); 
+  }     
        
-       if (receiverShiftCounter < 7)
-       {
-         ++receiverShiftCounter;
-       }
-       else 
-       {
-         dataReady = true;
-         receiveState = START_BIT;
-         disableReceiver();    
-       }   
-
+  ++receiverShiftCounter;
+  if (receiverShiftCounter > 6)
+  {
+    dataReady = true;
+    receiveState = START_BIT;         
+  }
 }
 
 void MeccanoPortReceiver::receiveDataRise()
 {
-    
-  //uint8_t bitValue = 0;
-
   //get t1
-receiver.reset();
-/*
- 
-  int lowTime = receiver.read_high_resolution_us();
-
-  switch(receiveState)
-  {
-     case START_BIT:
-       if (lowTime > START_BIT_LOW_US)
-       {
-         receiverShiftCounter = 0;
-         receiveState = DATA_BITS; 
-       }
-
-       break;
-     case DATA_BITS:       
-       if (lowTime < ZERO_BIT_US)
-       {
-         receiverData |= (1 << receiverShiftCounter); 
-       }     
-       
-       if (receiverShiftCounter < 7)
-       {
-         ++receiverShiftCounter;
-       }
-       else 
-       {
-         dataReady = true;
-         receiveState = START_BIT;
-         disableReceiver();    
-       }   
-       break;
-  }
-
-
-*/ 
-
-
+  receiver.reset();
 }
 
         uint8_t MeccanoPortReceiver::getReceivedData() {
