@@ -21,6 +21,7 @@ void printAllModulesData(std::map<int, MeccanoSmartModule>& modulesMap)
 }
 
 int main() {
+  int currentModule = 0;
   int posCounter = 0x18;
   std::vector<int> modulesPresent;
 
@@ -35,7 +36,7 @@ int main() {
 
   for (int j = 0; j < 4; j++)
   {
-    port1.setCurrentModule(j);
+    //port1.setCurrentModule(j);
     for (int i = 0; i < 4; i++)
     {
       port1.sendData();     
@@ -43,10 +44,11 @@ int main() {
     }
   }
   printAllModulesData(port1.getModulesMap());
+
 
   for (int j = 0; j < 4; j++)
   {
-    port1.setCurrentModule(j);
+    //port1.setCurrentModule(j);
     for (int i = 0; i < 4; i++)
     {
       port1.sendData();     
@@ -54,30 +56,33 @@ int main() {
     }
   }
   printAllModulesData(port1.getModulesMap());
-
+  
   wait(5);
   while(1) 
   {   	
     printAllModulesData(port1.getModulesMap());
     //ser.printf("Input data = %d \r\n", port1.getReceivedData());
     
- 
-    for (int j = 0; j < 4; j++)
-    {
-    port1.setCurrentModule(j);     
+    //port1.setCurrentModule(currentModule);     
     for (int i = 0; i < 4; i++)
     {
       
       port1.setCommand(i, posCounter);     
     }
     port1.sendData();
-    }
+    
+ 
+  currentModule++;
+  if (currentModule > 3)
+  {
+    currentModule = 0;
+  }
 
     if (posCounter < 0xE8)
       posCounter+=2;
     else
       posCounter = 0x18;
 
-  	wait(0.1);    
+  	wait(0.5);    
   }
 }

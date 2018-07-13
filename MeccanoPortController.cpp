@@ -87,7 +87,7 @@ uint8_t MeccanoPortController::sendData()
   *portEnable = 0;
   portReceiver->enableReceiver();
 
-  wait(0.014);
+  wait(0.02);
   portReceiver->disableReceiver();
   *portEnable = 1;
 
@@ -108,13 +108,12 @@ uint8_t MeccanoPortController::sendData()
   else
     setInputData(currentModule, 0);  
   
-  /*
   currentModule++;
   if (currentModule > 3)
   {
     currentModule = 0;
   }
-*/
+
   return receivedData;
 }
 
