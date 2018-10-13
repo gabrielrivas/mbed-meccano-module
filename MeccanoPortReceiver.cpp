@@ -50,7 +50,7 @@ void MeccanoPortReceiver::receiveDataFall()
   if ((lowTime > 700) &&  (lowTime < 1000))
   {
     receiverData |= (1 << receiverShiftCounter); 
-  }     
+  } 
        
   ++receiverShiftCounter;
   if (receiverShiftCounter > 6)

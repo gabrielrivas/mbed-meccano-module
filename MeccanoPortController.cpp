@@ -87,7 +87,7 @@ uint8_t MeccanoPortController::sendData()
   *portEnable = 0;
   portReceiver->enableReceiver();
 
-  wait(0.02);
+  wait(0.019);
   portReceiver->disableReceiver();
   *portEnable = 1;
 
