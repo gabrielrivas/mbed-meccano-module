@@ -37,8 +37,7 @@ class MeccanoPortController
         uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum);
         
         void setCommand(int servoSlot, uint8_t command);
-        uint8_t sendData();
-        void ioEngine();
+        uint8_t sendData(int returnModule);
         void setPresence(int servoSlot, bool presence);
         void setType(int servoSlot, MeccanoSmartModule::TYPE_t type);
         void setInputData(int servoSlot, uint8_t data);
@@ -61,7 +60,6 @@ class MeccanoPortController
         Serial* moduleDataOut;
         MeccanoPortReceiver* portReceiver; 
         DigitalOut* portEnable;
-
 
         PORT_CONTROLLER controllerState;
 

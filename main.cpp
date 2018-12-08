@@ -37,37 +37,22 @@ int main() {
   led1 = 0;
 
   MeccanoPortController port1(&moduleDataOut, &moduleDataIn, &portEnable);
-wait(2);
-
-  for (int j = 0; j < 4; j++)
-  {
-    //port1.setCurrentModule(j);
-    for (int i = 0; i < 4; i++)
-    {
+  wait(2);
       
-      port1.sendData();     
-      
-    }
-  }
+  port1.sendData(0);           
+   
   printAllModulesData(port1.getModulesMap());
 
   for (int j = 0; j < 4; j++)
   {
-    //port1.setCurrentModule(j);
-    for (int i = 0; i < 4; i++)
-    {
-      port1.sendData();     
-      
-    }
+    port1.sendData(j);
   }
+
   printAllModulesData(port1.getModulesMap());
   
   port1.setCommand(0, posCounter);
-  port1.setCommand(1, posCounter);
-  port1.setCommand(2, posCounter);
-  port1.setCommand(3, posCounter);
-  port1.sendData();
-  wait(5);
+  port1.sendData(0);
+  wait(1);
   
   while(1) 
   {   	
@@ -79,7 +64,7 @@ wait(2);
     {      
       port1.setCommand(i, posCounter);     
     }
-    port1.sendData();
+    port1.sendData(0);
     
     if (!direction)
     {
@@ -101,6 +86,6 @@ wait(2);
         direction = false;
       }
     }
-  	wait(0.1);    
+  	//wait(0.01);    
   }
 }

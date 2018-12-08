@@ -17,7 +17,6 @@ MeccanoPortReceiver::MeccanoPortReceiver(InterruptIn* a_moduleDataIn)
   moduleDataIn->fall(callback(this, &MeccanoPortReceiver::receiveDataFall));
   moduleDataIn->rise(callback(this, &MeccanoPortReceiver::receiveDataRise));    
 
-
   receiver.start();
 }
 
@@ -47,7 +46,7 @@ void MeccanoPortReceiver::receiveDataFall()
  
   int lowTime = receiver.read_us();
        
-  if ((lowTime > 700) &&  (lowTime < 1000))
+  if (lowTime > 450)
   {
     receiverData |= (1 << receiverShiftCounter); 
   } 
@@ -66,14 +65,15 @@ void MeccanoPortReceiver::receiveDataRise()
   receiver.reset();
 }
 
-        uint8_t MeccanoPortReceiver::getReceivedData() {
-          uint8_t dataOut = receiverData; 
-          receiverData = 0;            
-          return dataOut;
-        }
+uint8_t MeccanoPortReceiver::getReceivedData() 
+{
+  uint8_t dataOut = receiverData; 
+  receiverData = 0;            
+  return dataOut;
+}
 
 
-        bool MeccanoPortReceiver::isDataReady()
-        {
-          return dataReady;
-        }
+bool MeccanoPortReceiver::isDataReady()
+{
+  return dataReady;
+}
