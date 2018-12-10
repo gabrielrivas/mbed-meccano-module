@@ -6,9 +6,9 @@
 //Mask that adds the start and stop bits 
 //For sending bytes
 MeccanoPortController::MeccanoPortController(Serial* a_moduleDataOut, InterruptIn* a_moduleDataIn, DigitalOut* a_portEnable)
-{
-  moduleDataOut = a_moduleDataOut;    
+{      
   portEnable = a_portEnable;
+  portSender = new MeccanoPortSender(a_moduleDataOut);
   portReceiver = new MeccanoPortReceiver(a_moduleDataIn);
 
   *portEnable = 1;
@@ -54,13 +54,13 @@ void MeccanoPortController::setCommand(int servoSlot, uint8_t command)
   (it->second).m_outputData = command; 
 }
 
-uint8_t MeccanoPortController::sendData(int returnModule)
+uint8_t MeccanoPortController::sendData(int moduleIndex)
 {
   *portEnable = 1;
   portReceiver->resetFSM();
-  
-  if (returnModule < 4)
-    currentModule = returnModule;
+
+  if (moduleIndex < 4)
+    currentModule = moduleIndex;
   else
     currentModule = 0;
 
@@ -71,14 +71,14 @@ uint8_t MeccanoPortController::sendData(int returnModule)
                                currentModule);
 
   //Send start byte
-  moduleDataOut->putc(MeccanoPortController::HEADER_BYTE);
+  portSender->sendData(MeccanoPortController::HEADER_BYTE);
 
   //Send channel data for the 4 channels
   for (int modCount = 0; modCount < 4; ++modCount)
-    moduleDataOut->putc(m_smartModulesMap.at(modCount).m_outputData);        	          	  	
-  
+    portSender->sendData(m_smartModulesMap.at(modCount).m_outputData);
+
   //Send checksum
-  moduleDataOut->putc(checkSum);
+  portSender->sendData(checkSum);
 
   //Enable receiver  
   wait(0.010);

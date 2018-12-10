@@ -3,6 +3,7 @@
 
 #include "MeccanoSmartModule.h"
 #include "MeccanoPortReceiver.h"
+#include "MeccanoPortSender.h"
 #include <map>
 #include "mbed.h"
 
@@ -37,7 +38,7 @@ class MeccanoPortController
         uint8_t calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum);
         
         void setCommand(int servoSlot, uint8_t command);
-        uint8_t sendData(int returnModule);
+        uint8_t sendData(int moduleIndex);
         void setPresence(int servoSlot, bool presence);
         void setType(int servoSlot, MeccanoSmartModule::TYPE_t type);
         void setInputData(int servoSlot, uint8_t data);
@@ -57,18 +58,18 @@ class MeccanoPortController
           return currentModule;
         }
     private:
-        Serial* moduleDataOut;
-        MeccanoPortReceiver* portReceiver; 
-        DigitalOut* portEnable;
+      MeccanoPortSender* portSender;
+      MeccanoPortReceiver* portReceiver;
+      DigitalOut* portEnable;
 
-        PORT_CONTROLLER controllerState;
+      PORT_CONTROLLER controllerState;
 
-        std::map<int, MeccanoSmartModule> m_smartModulesMap;
-        uint8_t checkSum;
+      std::map<int, MeccanoSmartModule> m_smartModulesMap;
+      uint8_t checkSum;
 
-        RtosTimer* engineTicker;        
+      RtosTimer *engineTicker;
 
-        int currentModule;
+      int currentModule;
 };
 
 #endif
