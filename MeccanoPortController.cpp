@@ -5,57 +5,23 @@
 
 //Mask that adds the start and stop bits 
 //For sending bytes
-#define START_STOP_BITS 0x0600
-#define BIT_TIME 420
+MeccanoPortController::MeccanoPortController(Serial* a_moduleDataOut, InterruptIn* a_moduleDataIn, DigitalOut* a_portEnable)
+{      
+  portEnable = a_portEnable;
+  portSender = new MeccanoPortSender(a_moduleDataOut);
+  portReceiver = new MeccanoPortReceiver(a_moduleDataIn);
 
-uint8_t MeccanoPortController::startByte = 0xFF;
+  *portEnable = 1;
+   
+  controllerState = MeccanoPortController::MODULE_DISCOVERY; 
+  currentModule = 0;
 
-MeccanoPortController::MeccanoPortController(DigitalInOut* a_moduleDataOut, InterruptIn* a_moduleDataIn)
-{
-    moduleDataOut = a_moduleDataOut;
-    moduleDataIn = a_moduleDataIn;    
-
-    moduleDataOut->output();
-    moduleDataOut->mode(PullNone); 
-    
-    //Initialize channel output	
-    *moduleDataOut = 1;
-
-    receiveState = START_BIT;
-    sendState = START_BYTE;
-
-    senderShiftCounter = 0;
-    moduleCounter = 0;
-
-    moduleCounter = 0;
-
-    tmpData = 0;
-
-    checkSum = 0;
-
-    receiver;
-    lowTime = 0;
-    receiverShiftCounter = 0;
-    receiverData = 0;
-
-    receiver.start(); 
-    moduleDataIn->fall(callback(this, &MeccanoPortController::receiveDataFall));
-    moduleDataIn->rise(callback(this, &MeccanoPortController::receiveDataRise));
-    
+  checkSum = 0;
 
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(0, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(1, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(2, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
   m_smartModulesMap.insert ( std::pair<int, MeccanoSmartModule>(3, MeccanoSmartModule(MeccanoSmartModule::M_NONE, 0xFE)) );
-
-  m_inputThread = new Thread(MeccanoPortController::threadStarter, this);
-  m_inputThread->set_priority(osPriorityRealtime);    
-}
-
-void MeccanoPortController::threadStarter(const void* arg)
-{
-	MeccanoPortController* instancePtr = static_cast<MeccanoPortController*>(const_cast<void*>(arg));
-  instancePtr->ioControllerEngine();
 }
 
 uint8_t MeccanoPortController::calculateCheckSum(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4, uint8_t moduleNum){
@@ -68,168 +34,84 @@ uint8_t MeccanoPortController::calculateCheckSum(uint8_t Data1, uint8_t Data2, u
   return (CS & 0xFF);
 }
 
-uint16_t MeccanoPortController::frameByte(uint8_t data)
+void MeccanoPortController::setPresence(int servoSlot, bool presence)
 {
-   uint16_t tmp = data;
-   
-   return (tmp << 1) | START_STOP_BITS;  
-}
-
-void MeccanoPortController::receiveDataFall()
-{
-  //t0 = 0
-  receiver.reset();
-}
-
-void MeccanoPortController::receiveDataRise()
-{
-  uint8_t bitValue = 0;
-
-  //get t1
-  lowTime = receiver.read_us(); 
-
-  switch(receiveState)
-  {
-     case START_BIT:
-       if (lowTime > 1900)
-       {
-         receiverShiftCounter = 0;
-         receiverData = 0;
-         receiveState = DATA_BITS; 
-       }
-
-       break;
-     case DATA_BITS:       
-       if (lowTime < 700)
-       {
-         bitValue = 1; 
-       }     
-       receiverData |= ((bitValue & 0x01) << receiverShiftCounter);
-
-       if (receiverShiftCounter < 7)
-       {
-         ++receiverShiftCounter;
-       }
-       else 
-       {
-
-         std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(currentModule); 
-         (it->second).m_inputData = receiverData; 
-           
-         receiveState = START_BIT;
-
-         moduleDataIn->disable_irq();        
-       }   
-       break;
-  }
-}
-
-void MeccanoPortController::sendData()
-{
-    switch(sendState)
-    {
-    	case START_BYTE:    	  
-        *moduleDataOut = ((tmpData >> senderShiftCounter) & 0x01);	
-    	  
-    	  if (senderShiftCounter < 10)
-    	  {
-            senderShiftCounter++; 
-        }
-        else
-        {
-          sendState = DATA_BYTES;
-          moduleCounter = 0;
-          tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_outputData); 
-          senderShiftCounter = 0;   
-        }  
-    	  break;  
-    	case DATA_BYTES:    	
-        *moduleDataOut = ((tmpData >> senderShiftCounter) & 0x01);
-
-  	    if (senderShiftCounter < 10)
-  	    {	
-          senderShiftCounter++; 
-        }
-        else
-        {
-          if (moduleCounter == 3 )
-          {
-            tmpData = frameByte(checkSum);
-            moduleCounter++;   
-          }
-        	else if (moduleCounter < 3) 
-        	{
-            moduleCounter++;
-        	  tmpData = frameByte(m_smartModulesMap.at(moduleCounter).m_outputData);        	          	  	
-        	}
-        	else
-        	{
-              *moduleDataOut = 1;
-        	  moduleCounter = 0;
-        	  sendState = START_BYTE;
-        
-              //Detach sender interrupt while receiving data
-              moduleDataIn->enable_irq();
-              sender.detach();
-              moduleDataOut->input();                   
-        	}
-          senderShiftCounter = 0;    
-        }   
-    	  break;  
-    }	
-}
-
-void MeccanoPortController::setPosition(int servoSlot, uint8_t position)
-{
+    //Put guards in here
     std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
-    (it->second).m_outputData = position; 
-
-    enableSendData(); 
+    (it->second).m_isPresent = presence; 
 }
 
-void MeccanoPortController::enableSendData()
-{  
-    tmpData = frameByte(startByte);
- 
-    if (currentModule < 3)
-      currentModule++;
-    else
-      currentModule = 0;
-
-    checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
-                          m_smartModulesMap.at(1).m_outputData,
-                          m_smartModulesMap.at(2).m_outputData,
-                          m_smartModulesMap.at(3).m_outputData,
-                          currentModule);
-  
-
-    sendState = START_BYTE;
-       
-    senderShiftCounter = 0;
-    moduleCounter = 0;
-    
-    moduleDataOut->output();      
-    sender.attach_us(callback(this, &MeccanoPortController::sendData), BIT_TIME);
-}
-
-void MeccanoPortController::ioControllerEngine()
+void MeccanoPortController::setType(int servoSlot, MeccanoSmartModule::TYPE_t type)
 {
-int posCounter = 0x18;
+    //Put guards in here
+    std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
+    (it->second).m_type = type; 
+}
 
-  setPosition(0, 0xFE);
-  Thread::wait(500);
-  setPosition(0, 0xFC);
-  Thread::wait(500);
+void MeccanoPortController::setCommand(int servoSlot, uint8_t command)
+{
+  std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
+  (it->second).m_outputData = command; 
+}
 
-  while(true)
+uint8_t MeccanoPortController::sendData(int moduleIndex)
+{
+  *portEnable = 1;
+  portReceiver->resetFSM();
+
+  if (moduleIndex < 4)
+    currentModule = moduleIndex;
+  else
+    currentModule = 0;
+
+  checkSum = calculateCheckSum(m_smartModulesMap.at(0).m_outputData,
+                               m_smartModulesMap.at(1).m_outputData,
+                               m_smartModulesMap.at(2).m_outputData,
+                               m_smartModulesMap.at(3).m_outputData,
+                               currentModule);
+
+  //Send start byte
+  portSender->sendData(MeccanoPortController::HEADER_BYTE);
+
+  //Send channel data for the 4 channels
+  for (int modCount = 0; modCount < 4; ++modCount)
+    portSender->sendData(m_smartModulesMap.at(modCount).m_outputData);
+
+  //Send checksum
+  portSender->sendData(checkSum);
+
+  //Enable receiver  
+  wait(0.010);
+  *portEnable = 0;
+  portReceiver->enableReceiver();
+
+  wait(0.019);
+  portReceiver->disableReceiver();
+  *portEnable = 1;
+
+  uint8_t receivedData = portReceiver->getReceivedData();
+
+  if (portReceiver->isDataReady())
   {
-    setPosition(0, posCounter);
-    
-    if (posCounter < 0xE8)
-      posCounter++;
-    else
-      posCounter = 0x18;
+    if (receivedData == ID_NOT_ASSIGNED)
+      setCommand(currentModule, REPORT_TYPE);
 
-    Thread::wait(100);    
+    setInputData(currentModule, receivedData);
   }
-}  
+  else
+    setInputData(currentModule, 0);  
+  
+  return receivedData;
+}
+
+void MeccanoPortController::setInputData(int servoSlot, uint8_t data)
+{
+    //Put guards in here
+    std::map<int, MeccanoSmartModule>::iterator it = m_smartModulesMap.find(servoSlot); 
+    (it->second).m_inputData = data; 
+}
+
+void MeccanoPortController::setCurrentModule(int value)
+{
+  currentModule = value;
+}
